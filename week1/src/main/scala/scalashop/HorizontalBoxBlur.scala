@@ -1,6 +1,7 @@
 package scalashop
 
 import org.scalameter._
+import math.{ceil, min}
 
 object HorizontalBoxBlurRunner {
 
@@ -8,7 +9,7 @@ object HorizontalBoxBlurRunner {
     Key.exec.minWarmupRuns -> 5,
     Key.exec.maxWarmupRuns -> 10,
     Key.exec.benchRuns -> 10,
-    Key.verbose -> true
+    Key.verbose -> false
   ) withWarmer(new Warmer.Default)
 
   def main(args: Array[String]): Unit = {
@@ -40,9 +41,11 @@ object HorizontalBoxBlur extends HorizontalBoxBlurInterface {
    *  Within each row, `blur` traverses the pixels by going from left to right.
    */
   def blur(src: Img, dst: Img, from: Int, end: Int, radius: Int): Unit = {
-  // TODO implement this method using the `boxBlurKernel` method
-
-  ???
+    for {
+      x <- 0 until src.width
+      y <- from until end
+    } dst.update(x, y, boxBlurKernel(src, x, y, radius))
+    () // force return Unit
   }
 
   /** Blurs the rows of the source image in parallel using `numTasks` tasks.
@@ -53,8 +56,12 @@ object HorizontalBoxBlur extends HorizontalBoxBlurInterface {
    */
   def parBlur(src: Img, dst: Img, numTasks: Int, radius: Int): Unit = {
   // TODO implement using the `task` construct and the `blur` method
+    val usedTasks = min(src.height, numTasks)
+    val starts = 0 to src.height by ceil(src.height/usedTasks).toInt
+    val tuples = starts.zip(starts.tail)
 
-  ???
+    val tasks = for ((start, end) <- tuples) yield task(blur(src, dst, start, end, radius))
+    tasks.map(_.join)
+    ()
   }
-
 }

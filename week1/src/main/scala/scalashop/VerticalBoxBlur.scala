@@ -1,6 +1,7 @@
 package scalashop
 
 import org.scalameter._
+import math.{ceil, min}
 
 object VerticalBoxBlurRunner {
 
@@ -58,7 +59,8 @@ object VerticalBoxBlur extends VerticalBoxBlurInterface {
    */
   def parBlur(src: Img, dst: Img, numTasks: Int, radius: Int): Unit = {
     // TODO implement using the `task` construct and the `blur` method
-    val starts = 0 until src.width by numTasks
+    val usedTasks = min(src.width, numTasks)
+    val starts = 0 to src.width by ceil(src.width/usedTasks).toInt
     val tuples = starts.zip(starts.tail)
 
     val tasks = for ((start, end) <- tuples) yield task(blur(src, dst, start, end, radius))
