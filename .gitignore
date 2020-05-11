@@ -17,3 +17,4 @@ project/plugins/project/
 .worksheet
 .idea
 .metals
+metals.sbt
