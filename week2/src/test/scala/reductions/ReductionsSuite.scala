@@ -118,7 +118,17 @@ class ReductionsSuite {
     check(").", false)
   }
 
+  @Test def `balance should work for fishy strings`: Unit = {
+    def check(input: String, expected: Boolean) =
+      assert(parBalance(input.toArray, 1) == expected,
+        s"balance($input) should be $expected")
+
+    check("((()))", true)
+    check("(())", true)
+    check(")(()(((", false)
+    check("))))()))))", false)
+  }
+
 
   @Rule def individualTestTimeout = new org.junit.rules.Timeout(10 * 1000)
 }
-

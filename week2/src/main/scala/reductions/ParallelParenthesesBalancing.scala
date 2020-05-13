@@ -1,5 +1,6 @@
 package reductions
 
+import scala.math.max
 import scala.annotation._
 import org.scalameter._
 
@@ -69,13 +70,13 @@ object ParallelParenthesesBalancing extends ParallelParenthesesBalancingInterfac
     }
 
     def reduce(from: Int, until: Int): (Int, Int) = {
-      if (until - from < threshold) traverse(from, until, 0, 0)
+      if (until - from <= threshold) traverse(from, until, 0, 0)
       else {
         val m = (from + until) / 2
         val ((imb_open1, imb_close1), (imb_open2, imb_close2)) = parallel(
-          traverse(from, m, 0, 0), traverse(m, until, 0, 0)
+          reduce(from, m), reduce(m, until)
         )
-        (imb_open1 - imb_open2, imb_close1 - imb_close2)
+        (max(imb_open1 + imb_open2 - imb_close2, 0), max(imb_close1 + imb_close2 - imb_open1, 0))
       }
     }
 
