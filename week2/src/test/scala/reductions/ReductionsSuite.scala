@@ -18,6 +18,11 @@ class ReductionsSuite {
     assertEquals(List(0f, 1f, 4f, 4f), output.toList)
   }
 
+  @Test def `upsweepSequential test`: Unit = {
+    val x = Array[Float](0f, 1f, 8f, 9f)
+    assertEquals(upsweepSequential(x, 1, 4), 4f, 0.001)
+  }
+
 
 
 
