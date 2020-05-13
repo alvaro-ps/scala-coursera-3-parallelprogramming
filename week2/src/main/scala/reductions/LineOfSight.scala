@@ -41,7 +41,12 @@ case class Leaf(from: Int, until: Int, maxPrevious: Float) extends Tree
 object LineOfSight extends LineOfSightInterface {
 
   def lineOfSight(input: Array[Float], output: Array[Float]): Unit = {
-    ???
+    var maxAngle: Float = 0
+    for (i <- 1 until input.length) {
+      val angle = input(i)/i
+      maxAngle = if (angle > maxAngle) angle else maxAngle
+      output(i) = maxAngle
+    }
   }
 
   /** Traverses the specified part of the array and returns the maximum angle.
