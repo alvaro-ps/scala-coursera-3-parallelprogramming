@@ -165,20 +165,39 @@ package object barneshut {
 
   val SECTOR_PRECISION = 8
 
-  class SectorMatrix(val boundaries: Boundaries, val sectorPrecision: Int) extends SectorMatrixInterface {
+  class SectorMatrix(
+    val boundaries: Boundaries, val sectorPrecision: Int
+  ) extends SectorMatrixInterface {
+
     val sectorSize = boundaries.size / sectorPrecision
     val matrix = new Array[ConcBuffer[Body]](sectorPrecision * sectorPrecision)
-    for (i <- 0 until matrix.length) matrix(i) = new ConcBuffer
+    for (i <- 0 until matrix.length)
+      matrix(i) = new ConcBuffer
 
     def +=(b: Body): SectorMatrix = {
-      ???
+      val x = 
+        if (b.x < boundaries.minX) boundaries.minX
+        else if (b.x > boundaries.maxX) boundaries.maxX
+        else b.x
+      val y = 
+        if (b.y < boundaries.minY) boundaries.minY
+        else if (b.y > boundaries.maxY) boundaries.maxY
+        else b.y
+
+      val index_x: Int = (x / sectorSize).toInt
+      val index_y: Int = (y / sectorSize).toInt
+
+      apply(index_x, index_y) += b
       this
     }
 
     def apply(x: Int, y: Int) = matrix(y * sectorPrecision + x)
 
     def combine(that: SectorMatrix): SectorMatrix = {
-      ???
+      for ((this_buf, that_buf) <- this.matrix.zip(that.matrix))
+        this_buf combine that_buf
+
+      this
     }
 
     def toQuad(parallelism: Int): Quad = {

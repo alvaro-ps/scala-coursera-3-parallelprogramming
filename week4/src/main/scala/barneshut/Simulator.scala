@@ -12,11 +12,24 @@ import scala.collection.parallel.CollectionConverters._
 class Simulator(val taskSupport: TaskSupport, val timeStats: TimeStatistics) {
 
   def updateBoundaries(boundaries: Boundaries, body: Body): Boundaries = {
-    ???
+    val b = new Boundaries()
+    b.minX = math.min(body.x, boundaries.minX)
+    b.minY = math.min(body.y, boundaries.minY)
+    b.maxX = math.max(body.x, boundaries.maxX)
+    b.maxY = math.max(body.y, boundaries.maxY)
+
+    b
   }
 
   def mergeBoundaries(a: Boundaries, b: Boundaries): Boundaries = {
-    ???
+    val boundaries = new Boundaries()
+
+    boundaries.minX = math.min(a.minX, b.minX)
+    boundaries.minY = math.min(a.minY, b.minY)
+    boundaries.maxX = math.max(a.maxX, a.maxX)
+    boundaries.maxY = math.max(a.maxY, a.maxY)
+
+    boundaries
   }
 
   def computeBoundaries(bodies: coll.Seq[Body]): Boundaries = timeStats.timed("boundaries") {
@@ -28,7 +41,7 @@ class Simulator(val taskSupport: TaskSupport, val timeStats: TimeStatistics) {
   def computeSectorMatrix(bodies: coll.Seq[Body], boundaries: Boundaries): SectorMatrix = timeStats.timed("matrix") {
     val parBodies = bodies.par
     parBodies.tasksupport = taskSupport
-    ???
+    new SectorMatrix(boundaries, SECTOR_PRECISION)
   }
 
   def computeQuad(sectorMatrix: SectorMatrix): Quad = timeStats.timed("quad") {
@@ -38,7 +51,7 @@ class Simulator(val taskSupport: TaskSupport, val timeStats: TimeStatistics) {
   def updateBodies(bodies: coll.Seq[Body], quad: Quad): coll.Seq[Body] = timeStats.timed("update") {
     val parBodies = bodies.par
     parBodies.tasksupport = taskSupport
-    ???
+    bodies.map(_.updated(quad))
   }
 
   def eliminateOutliers(bodies: coll.Seq[Body], sectorMatrix: SectorMatrix, quad: Quad): coll.Seq[Body] = timeStats.timed("eliminate") {
