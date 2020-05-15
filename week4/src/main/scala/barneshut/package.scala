@@ -52,8 +52,14 @@ package object barneshut {
     val size: Float = nw.size + ne.size
     val mass: Float = nw.mass + ne.mass + sw.mass + se.mass
     val total: Int = nw.total + ne.total + sw.total + se.total
-    val massX: Float = List(nw, ne, sw, se).filter(_.total > 0).map(_.massX).sum / total
-    val massY: Float = List(nw, ne, sw, se).filter(_.total > 0).map(_.massY).sum / total
+    val massX: Float = (nw, ne, sw, se) match {
+      case (Empty(_,_,_), Empty(_,_,_), Empty(_,_,_), Empty(_,_,_)) => centerX
+      case _ => List(nw, ne, sw, se).filter(_.total > 0).map(_.massX).sum / total
+    }
+    val massY: Float = (nw, ne, sw, se) match {
+      case (Empty(_,_,_), Empty(_,_,_), Empty(_,_,_), Empty(_,_,_)) => centerY
+      case _ => List(nw, ne, sw, se).filter(_.total > 0).map(_.massY).sum / total
+    }
 
     def insert(b: Body): Fork =
       if (
@@ -74,7 +80,7 @@ package object barneshut {
   case class Leaf(centerX: Float, centerY: Float, size: Float, bodies: coll.Seq[Body])
   extends Quad {
     val total: Int = bodies.length
-    val mass: Float = bodies.map(_.mass).sum
+    val mass: Float = bodies.map(_.mass).sum / total
     val massX: Float = bodies.map(_.x).sum / total
     val massY: Float = bodies.map(_.y).sum / total
     def insert(b: Body): Quad = {
