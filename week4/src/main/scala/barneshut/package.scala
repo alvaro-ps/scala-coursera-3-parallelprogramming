@@ -29,51 +29,65 @@ package object barneshut {
 
   sealed abstract class Quad extends QuadInterface {
     def massX: Float
-
     def massY: Float
-
     def mass: Float
-
     def centerX: Float
-
     def centerY: Float
-
     def size: Float
-
     def total: Int
-
     def insert(b: Body): Quad
   }
 
   case class Empty(centerX: Float, centerY: Float, size: Float) extends Quad {
-    def massX: Float = ???
-    def massY: Float = ???
-    def mass: Float = ???
-    def total: Int = ???
-    def insert(b: Body): Quad = ???
+    def massX: Float = centerX
+    def massY: Float = centerY
+    def mass: Float = 0
+    def total: Int = 0
+    def insert(b: Body): Quad = Leaf(centerX, centerY, size, Seq(b))
   }
 
-  case class Fork(
-    nw: Quad, ne: Quad, sw: Quad, se: Quad
-  ) extends Quad {
-    val centerX: Float = ???
-    val centerY: Float = ???
-    val size: Float = ???
-    val mass: Float = ???
-    val massX: Float = ???
-    val massY: Float = ???
-    val total: Int = ???
+  case class Fork(nw: Quad, ne: Quad, sw: Quad, se: Quad) extends Quad {
+    val centerX: Float = nw.centerX + nw.size/2
+    val centerY: Float = nw.centerY + nw.size/2
+    val size: Float = nw.size + ne.size
+    val mass: Float = nw.mass + ne.mass + sw.mass + se.mass
+    val total: Int = nw.total + ne.total + sw.total + se.total
+    val massX: Float = List(nw, ne, sw, se).filter(_.total > 0).map(_.massX).sum / total
+    val massY: Float = List(nw, ne, sw, se).filter(_.total > 0).map(_.massY).sum / total
 
-    def insert(b: Body): Fork = {
-      ???
-    }
+    def insert(b: Body): Fork =
+      if (
+        nw.centerX - nw.size/2 < b.x && b.x <= nw.centerX + nw.size/2 &&
+        nw.centerY - nw.size/2 < b.y && b.y <= nw.centerY + nw.size/2
+      ) Fork(nw.insert(b), ne, sw, se)
+      else if (
+        ne.centerX - ne.size/2 < b.x && b.x <= ne.centerX + ne.size/2 &&
+        ne.centerY - ne.size/2 < b.y && b.y <= ne.centerY + ne.size/2
+      ) Fork(nw, ne.insert(b), sw, se)
+      else if (
+        sw.centerX - sw.size/2 < b.x && b.x <= sw.centerX + sw.size/2 &&
+        sw.centerY - sw.size/2 < b.y && b.y <= sw.centerY + sw.size/2
+      ) Fork(nw, ne, sw.insert(b), se)
+      else Fork(nw, ne, sw, se.insert(b))
   }
 
   case class Leaf(centerX: Float, centerY: Float, size: Float, bodies: coll.Seq[Body])
   extends Quad {
-    val (mass, massX, massY) = (??? : Float, ??? : Float, ??? : Float)
-    val total: Int = ???
-    def insert(b: Body): Quad = ???
+    val total: Int = bodies.length
+    val mass: Float = bodies.map(_.mass).sum
+    val massX: Float = bodies.map(_.x).sum / total
+    val massY: Float = bodies.map(_.y).sum / total
+    def insert(b: Body): Quad = {
+      if (size > minimumSize) {
+        val emptyQuad = Fork(
+          Empty(centerX, centerY, size),
+          Empty(centerX, centerY, size),
+          Empty(centerX, centerY, size),
+          Empty(centerX, centerY, size),
+        )
+        emptyQuad.insert(b)
+      } else Leaf(centerX, centerY, size, b +: bodies)
+    }
   }
 
   def minimumSize = 0.00001f
