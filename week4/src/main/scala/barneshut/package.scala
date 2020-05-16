@@ -52,14 +52,12 @@ package object barneshut {
     val size: Float = nw.size + ne.size
     val mass: Float = nw.mass + ne.mass + sw.mass + se.mass
     val total: Int = nw.total + ne.total + sw.total + se.total
-    val massX: Float = (nw, ne, sw, se) match {
-      case (Empty(_,_,_), Empty(_,_,_), Empty(_,_,_), Empty(_,_,_)) => centerX
-      case _ => List(nw, ne, sw, se).filter(_.total > 0).map(_.massX).sum / total
-    }
-    val massY: Float = (nw, ne, sw, se) match {
-      case (Empty(_,_,_), Empty(_,_,_), Empty(_,_,_), Empty(_,_,_)) => centerY
-      case _ => List(nw, ne, sw, se).filter(_.total > 0).map(_.massY).sum / total
-    }
+    val massX: Float = 
+      if (mass == 0) centerX
+      else (nw.mass*nw.massX + ne.mass*nw.massX + sw.mass*sw.massX + se.mass*se.massX) / mass
+    val massY: Float = 
+      if (mass == 0) centerY
+      else (nw.mass*nw.massY + ne.mass*nw.massY + sw.mass*sw.massY + se.mass*se.massY) / mass
 
     def insert(b: Body): Fork =
       if (
@@ -80,19 +78,24 @@ package object barneshut {
   case class Leaf(centerX: Float, centerY: Float, size: Float, bodies: coll.Seq[Body])
   extends Quad {
     val total: Int = bodies.length
-    val mass: Float = bodies.map(_.mass).sum / total
-    val massX: Float = bodies.map(_.x).sum / total
-    val massY: Float = bodies.map(_.y).sum / total
+    val mass: Float = bodies.map(_.mass).sum
+    val massX: Float = bodies.map(b => b.x*b.mass).sum / mass
+    val massY: Float = bodies.map(b => b.y*b.mass).sum / mass
     def insert(b: Body): Quad = {
-      if (size > minimumSize) {
-        val emptyQuad = Fork(
+      if (size <= minimumSize)
+        Leaf(centerX, centerY, size, b +: bodies)
+      else {
+        var quad = Fork(
           Empty(centerX, centerY, size),
           Empty(centerX, centerY, size),
           Empty(centerX, centerY, size),
-          Empty(centerX, centerY, size),
+          Empty(centerX, centerY, size)
         )
-        emptyQuad.insert(b)
-      } else Leaf(centerX, centerY, size, b +: bodies)
+        for (body <- b +: bodies)
+          quad = quad.insert(body)
+
+        quad
+      }
     }
   }
 
