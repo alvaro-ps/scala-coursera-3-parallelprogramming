@@ -26,8 +26,8 @@ class Simulator(val taskSupport: TaskSupport, val timeStats: TimeStatistics) {
 
     boundaries.minX = math.min(a.minX, b.minX)
     boundaries.minY = math.min(a.minY, b.minY)
-    boundaries.maxX = math.max(a.maxX, a.maxX)
-    boundaries.maxY = math.max(a.maxY, a.maxY)
+    boundaries.maxX = math.max(a.maxX, b.maxX)
+    boundaries.maxY = math.max(a.maxY, b.maxY)
 
     boundaries
   }
@@ -41,7 +41,11 @@ class Simulator(val taskSupport: TaskSupport, val timeStats: TimeStatistics) {
   def computeSectorMatrix(bodies: coll.Seq[Body], boundaries: Boundaries): SectorMatrix = timeStats.timed("matrix") {
     val parBodies = bodies.par
     parBodies.tasksupport = taskSupport
-    new SectorMatrix(boundaries, SECTOR_PRECISION)
+
+    parBodies.aggregate(new SectorMatrix(boundaries, SECTOR_PRECISION))(
+      { case (sectorMatrix, body) => sectorMatrix += body },
+      { case (sectorMatrixLeft, sectorMatrixRight) => sectorMatrixLeft combine sectorMatrixRight },
+    )
   }
 
   def computeQuad(sectorMatrix: SectorMatrix): Quad = timeStats.timed("quad") {

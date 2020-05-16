@@ -54,24 +54,15 @@ package object barneshut {
     val total: Int = nw.total + ne.total + sw.total + se.total
     val massX: Float = 
       if (mass == 0) centerX
-      else (nw.mass*nw.massX + ne.mass*nw.massX + sw.mass*sw.massX + se.mass*se.massX) / mass
+      else (nw.mass*nw.massX + ne.mass*ne.massX + sw.mass*sw.massX + se.mass*se.massX) / mass
     val massY: Float = 
       if (mass == 0) centerY
-      else (nw.mass*nw.massY + ne.mass*nw.massY + sw.mass*sw.massY + se.mass*se.massY) / mass
+      else (nw.mass*nw.massY + ne.mass*ne.massY + sw.mass*sw.massY + se.mass*se.massY) / mass
 
     def insert(b: Body): Fork =
-      if (
-        nw.centerX - nw.size/2 < b.x && b.x <= nw.centerX + nw.size/2 &&
-        nw.centerY - nw.size/2 < b.y && b.y <= nw.centerY + nw.size/2
-      ) Fork(nw.insert(b), ne, sw, se)
-      else if (
-        ne.centerX - ne.size/2 < b.x && b.x <= ne.centerX + ne.size/2 &&
-        ne.centerY - ne.size/2 < b.y && b.y <= ne.centerY + ne.size/2
-      ) Fork(nw, ne.insert(b), sw, se)
-      else if (
-        sw.centerX - sw.size/2 < b.x && b.x <= sw.centerX + sw.size/2 &&
-        sw.centerY - sw.size/2 < b.y && b.y <= sw.centerY + sw.size/2
-      ) Fork(nw, ne, sw.insert(b), se)
+      if (b.x < centerX && b.y < centerY) Fork(nw.insert(b), ne, sw, se)
+      else if (b.x >= centerX && b.y < centerY) Fork(nw, ne.insert(b), sw, se)
+      else if (b.x < centerX && b.y >= centerY) Fork(nw, ne, sw.insert(b), se)
       else Fork(nw, ne, sw, se.insert(b))
   }
 
@@ -85,14 +76,13 @@ package object barneshut {
       if (size <= minimumSize)
         Leaf(centerX, centerY, size, b +: bodies)
       else {
-        var quad = Fork(
-          Empty(centerX, centerY, size),
-          Empty(centerX, centerY, size),
-          Empty(centerX, centerY, size),
-          Empty(centerX, centerY, size)
+        val quad = Fork(
+          Empty(centerX-size/4, centerY-size/4, size/2),
+          Empty(centerX+size/4, centerY-size/4, size/2),
+          Empty(centerX-size/4, centerY+size/4, size/2),
+          Empty(centerX+size/4, centerY+size/4, size/2)
         )
-        for (body <- b +: bodies)
-          quad = quad.insert(body)
+        (b +: bodies) foreach quad.insert
 
         quad
       }
@@ -193,8 +183,8 @@ package object barneshut {
         else if (b.y > boundaries.maxY) boundaries.maxY
         else b.y
 
-      val index_x: Int = (x / sectorSize).toInt
-      val index_y: Int = (y / sectorSize).toInt
+      val index_x: Int = ((x - boundaries.minX) / sectorSize).toInt
+      val index_y: Int = ((y - boundaries.minY) / sectorSize).toInt
 
       apply(index_x, index_y) += b
       this
@@ -203,8 +193,8 @@ package object barneshut {
     def apply(x: Int, y: Int) = matrix(y * sectorPrecision + x)
 
     def combine(that: SectorMatrix): SectorMatrix = {
-      for ((this_buf, that_buf) <- this.matrix.zip(that.matrix))
-        this_buf combine that_buf
+      for (i <- 0 until matrix.length)
+        matrix.update(i, this.matrix(i) combine that.matrix(i))
 
       this
     }
